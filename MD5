@@ -1,0 +1,9 @@
+4835d5704d359f1db7b78fd2620d79e0 *Changes
+6b1b547d651a36254d3826bd3c67b88e *DESCRIPTION
+0c094edbde400a145a905dfe0828101a *NAMESPACE
+ae49c9c8c114389162a0ef3b5db1a073 *R/lsei.R
+f4bfb27cfd9eea6f2424a81ea08bec2a *man/hfti.Rd
+457ddda443f8b99e041e992062203ad7 *man/lsei.Rd
+a821d4af979b3bca7f0ad8bdd458d34b *man/nnls.Rd
+00363f6fb0a9a659fe0e5189bb6bb11e *src/lsei.f
+aa2895602a61bfa7e72de5b4d6da1fe5 *src/pnnls.f
