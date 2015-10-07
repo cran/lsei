@@ -1,2 +1,2 @@
 useDynLib(lsei)
-export(nnls, pnnls, ldp, lsei, lsi, hfti)
+export(nnls, pnnls, ldp, lsei, lsi, hfti, qp, pnnqp)

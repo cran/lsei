@@ -1,10 +1,11 @@
 Package: lsei
 Title: Solving Least Squares Problems under Equality/Inequality
         Constraints
-Version: 1.1-0
-Date: 2015-09-26
+Version: 1.1-1
+Date: 2015-10-04
 Authors@R: c(
-    person("Yong", "Wang", email = "yongwang@auckland.ac.nz", role = c("aut","cre")),
+    person("Yong", "Wang", email = "yongwang@auckland.ac.nz", 
+           role = c("aut","cre")),
     person("Charles L.", "Lawson", role = "aut"),
     person("Richard J.", "Hanson", role = "aut"))
 Description: It contains functions that solve least squares linear
@@ -15,10 +16,10 @@ Description: It contains functions that solve least squares linear
 License: GPL (>= 2)
 URL: https://www.stat.auckland.ac.nz/~yongwang
 NeedsCompilation: yes
-Packaged: 2015-09-26 20:19:37 UTC; yong
+Packaged: 2015-10-06 21:33:50 UTC; yong
 Author: Yong Wang [aut, cre],
   Charles L. Lawson [aut],
   Richard J. Hanson [aut]
 Maintainer: Yong Wang <yongwang@auckland.ac.nz>
 Repository: CRAN
-Date/Publication: 2015-09-27 10:20:19
+Date/Publication: 2015-10-07 09:13:29

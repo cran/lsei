@@ -24,7 +24,7 @@
 #---------------------------------- #
 # Nonnegative least squares (NNLS): #
 #                                   #
-#        Minimize     ||Ax - b||    #
+#        Minimize     ||ax - b||    #
 #        subject to   x >= 0        # 
 # --------------------------------- #
 
@@ -43,7 +43,7 @@ nnls = function(a, b) {
            mode=mode,PACKAGE="lsei")[c("x","rnorm","index","mode")]
 }
 
-# Solving the Partial NNLS problem
+# Solving a partial NNLS problem
 
 # Input:
 #
@@ -128,8 +128,18 @@ ldp = function(e, f, tol=1e-15) {
 #         Subject to     e x >= f                                 #
 # --------------------------------------------------------------- #
 
-lsi = function(a, b, e, f) {
-  k0 = ncol(a)
+lsi = function(a, b, e=NULL, f=NULL, lower=-Inf, upper=Inf) {
+  if(is.vector(e)) dim(e) = c(1, length(e))
+  if(any(lower != -Inf, upper != Inf)) {
+    k0 = ncol(a)
+    lower = rep(lower, len=k0)
+    upper = rep(upper, len=k0)
+    jl = lower != -Inf
+    ju = upper != Inf
+    e = rbind(e, diag(1, k0)[jl,], diag(-1, k0)[ju,])
+    f = c(f, lower[jl], -upper[ju])
+  }
+  if(is.null(e)) return( pnnls(a, b, k=ncol(a))$x )
   a.svd = svdrs(a, b)
   k = sum( a.svd$d > max(a.svd$d) * 1e-10 )     # pseudo-rank
   Q1b = a.svd$uTb[1:k,,drop=FALSE]
@@ -152,22 +162,39 @@ lsi = function(a, b, e, f) {
 #          and           e x >= f                                            #
 # -------------------------------------------------------------------------- #
 
-lsei = function(a, b, c, d, e, f) {
+lsei = function(a, b, c=NULL, d=NULL, e=NULL, f=NULL, lower=-Inf, upper=Inf) {
+  if(is.null(c)) return(lsi(a, b, e, f))
+  if(is.vector(c)) dim(c) = c(1, length(c))
   k = nrow(c)
   c.qr = qr( t(c) )
-  L = t(qr.R(c.qr))   # To get back c:   L %*% t(qr.Q(c.qr))
-  y1 = solve(L, d)    # Not efficient
+  L = t(qr.R(c.qr))          # To get back c:   L %*% t(qr.Q(c.qr))
+  y1 = forwardsolve(L, d)
   ad = t(qr.qty(c.qr, t(a)))
-  ed = t(qr.qty(c.qr, t(e)))
-  y2 = lsi(ad[,-(1:k),drop=FALSE], b - ad[,1:k,drop=FALSE] %*% y1,
-      ed[,-(1:k),drop=FALSE], f - ed[,1:k,drop=FALSE] %*% y1)
+  if(any(lower != -Inf, upper != Inf)) {
+    k0 = ncol(a)
+    lower = rep(lower, len=k0)
+    upper = rep(upper, len=k0)
+    jl = lower != -Inf
+    ju = upper != Inf
+    e = rbind(e, diag(1, k0)[jl,], diag(-1, k0)[ju,])
+    f = c(f, lower[jl], -upper[ju])
+  }
+  if(is.null(e)) 
+    y2 = pnnls(ad[,-(1:k),drop=FALSE], b - ad[,1:k,drop=FALSE] %*% y1,
+        ncol(ad)-k)$x
+  else {
+    if(is.vector(e)) dim(e) = c(1, length(e))
+    ed = t(qr.qty(c.qr, t(e)))
+    y2 = lsi(ad[,-(1:k),drop=FALSE], b - ad[,1:k,drop=FALSE] %*% y1,
+        ed[,-(1:k),drop=FALSE], f - ed[,1:k,drop=FALSE] %*% y1)
+  }
   qr.qy(c.qr, c(y1, y2))
 }
 
 # beta = c(rnorm(2), 1); beta[beta<0] = 0; beta = beta/sum(beta)
 # a = matrix(rnorm(18), ncol=3); b = a %*% beta + rnorm(3,sd=.1); c = matrix(rep(1, 3), nrow=1); d = 1; e = diag(rep(1,3)); f = rep(0,3); lsei(a, b, c, d, e, f)
 
-# # c = matrix(rnorm(6), ncol=3); d = rnorm(2); a = matrix(rnorm(24), nrow=8); b = rnorm(8); e = matrix(rnorm(12), nrow=4); f = rnorm(4); x = lsei(E, f, c, d, e, f); print(x); print(c %*% x - d); e %*% x - f
+# # c = matrix(rnorm(6), ncol=3); d = rnorm(2); a = matrix(rnorm(24), nrow=8); b = rnorm(8); e = matrix(rnorm(12), nrow=4); f = rnorm(4); x = lsei(a, b, c, d, e, f); print(x); print(c %*% x - d); e %*% x - f
 
 # ------------------------------------------------------- #
 # Least squares solution using Householder transformation #
@@ -195,7 +222,7 @@ hfti = function(a, b, tol = 1e-7) {
 #                                                            #
 # For the least squares problem                              #
 #                                                            #
-#              ||a x - b||^2                                 #
+#                ||a x - b||                                 #
 # ---------------------------------------------------------- #
 
 svdrs = function(a, b) {
@@ -227,3 +254,29 @@ svdrs = function(a, b) {
 # r$u %*% diag(r$d) %*% t(r$v) - x
 # svdrs(x, 1:3)
 
+# Quadratic programming
+
+# p^T x + x^T q x / 2
+
+# h is positive semidefinite
+
+qp = function(q, p, c=NULL, d=NULL, e=NULL, f=NULL,
+    lower=-Inf, upper=Inf, tol=1e-15) {
+  eq = eigen(q)
+  v2 = sqrt(eq$values[eq$values >= eq$values[1] * tol])
+  kr = length(v2)
+  a = t(eq$vectors[,1:kr,drop=FALSE]) * v2
+  b = - colSums(eq$vectors[,1:kr,drop=FALSE] * p / rep(v2, each=length(p)))
+  lsei(a, b, c, d, e, f, lower, upper)
+}
+
+# partial nonnegativity quadratic programming
+
+pnnqp = function(q, p, k=0, sum=NULL, tol=1e-15) {
+  eq = eigen(q)
+  v2 = sqrt(eq$values[eq$values >= eq$values[1] * tol])
+  kr = length(v2)
+  a = t(eq$vectors[,1:kr,drop=FALSE]) * v2
+  b = - colSums(eq$vectors[,1:kr,drop=FALSE] * p / rep(v2, each=length(p)))
+  pnnls(a, b, k, sum)
+}

@@ -13,3 +13,10 @@ Version 1.1-0
    * Help pages written/modified
    * Submission to CRAN
 
+Version 1.1-1
+
+   * For lsei(): 
+     - c and e are allowed to be vectors
+     - Add lower and upper in lsei()
+     - Set NULL as the default value for c, d, e and f
+   * Add qp(), pnnqp()

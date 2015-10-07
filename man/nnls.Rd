@@ -1,9 +1,10 @@
 \name{nnls}
 \alias{nnls}
 \alias{pnnls}
+\alias{pnnqp}
 %- Also NEED an '\alias' for EACH other topic documented here.
 
-\title{Least Squares under Nonnegativity Constraints}
+\title{Least Squares and Quadratic Programming under Nonnegativity Constraints}
 \description{
   
   The \code{nnls} function solves the least squares problem under
@@ -13,14 +14,23 @@
   \url{http://www.netlib.org/lawson-hanson}.
 
   The \code{pnnls} function solves the least squares problem when
-  possibly only some coefficients are subject to nonnegativity
-  constraints. It also works when the NN-restricted coefficients are
+  coefficients are partly subject to nonnegativity constraints. It also
+  allows the NN-restricted coefficients to be further restricted to have
+  a fixed positive sum.
+
+  The \code{pnnqp} function solves the quadratic programming problem
+  when solution values are partly subject to nonnegativity
+  constraints. It also allows the NN-restricted coefficients to be
   further restricted to have a fixed positive sum.
+
+  These functions are particularly useful for finding zeros exactly. 
+
 }
 
 \usage{
 nnls(a, b) 
 pnnls(a, b, k=0, sum=NULL) 
+pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
 }
 
 \arguments{
@@ -38,21 +48,47 @@ pnnls(a, b, k=0, sum=NULL)
     = a positive value, if NN-restricted coefficients are further
     restricted to have a fixed positive sum.}
   
+  \item{q}{Positive semidefinite matrix of numeric values for the
+    quadratic term of a quadratic programming problem.}
+  
+  \item{p}{Vector of numeric values for the linear term of a quadratic
+    programming problem.}
+
+  \item{tol}{Tolerance for calculating pseudo-rank of \code{q}.}
 }
 
 \details{
   Given matrix \code{a} and vector \code{b}, \code{nnls} solves the
   nonnegativity least squares problem:
   
-  \deqn{\mathrm{minimize \ \ } || a x - b ||^2,}{minimize  || a x - b ||^2,} \deqn{\mathrm{\ \ \ subject\ to\ \ } x \ge 0.}{ subject to  x >= 0.}
+  \deqn{\mathrm{minimize \ \ } || a x - b ||,}{minimize  || a x - b ||,} \deqn{\mathrm{\ \ \ subject\ to\ \ } x \ge 0.}{ subject to  x >= 0.}
   
-  Function \code{pnnls} can also solve the above nonnegativity least squares
-  problem when \code{k=0}, but it may leave the first \code{k} values
-  unrestricted. The returned value of \code{k} can be different from the
-  input, if \code{a} has linearly dependent columns. If \code{sum} is a
-  positive value, \code{pnnls} solves the problem by further restricting that
-  the NN-restricted coefficients must sum to the given value.
-  
+  Function \code{pnnls} can also solve the above nonnegativity least
+  squares problem when \code{k=0}, but it may also leave the first
+  \code{k} coefficients unrestricted. The output value of \code{k} can
+  be different from the input, if \code{a} has linearly dependent
+  columns. If \code{sum} is a positive value, \code{pnnls} solves the
+  problem by further restricting that the NN-restricted coefficients
+  must sum to the given value.
+
+  Function \code{pnnqp} solves the quadratic programming problem
+
+  \deqn{\mathrm{minimize\ \ } \frac12 x^T q x + p^T x,}{minimize 0.5 x^T q x + p^T x,}
+
+  when only some or all coefficients are restricted by
+  nonnegativity. The output value of \code{k} can be different from the
+  input, if \code{q} has linearly dependent columns. If \code{sum} is a
+  positive value, \code{pnnls} solves the problem by further restricting
+  that the NN-restricted coefficients must sum to the given value. The
+  quadratic programming problem is solved by transforming the problem
+  into a least squares one under the same constraints, which is then
+  solved by function \code{pnnls}.
+
+  Functions \code{nnls}, \code{pnnls} and \code{pnnqp} are able to
+  return any zero-valued solution as 0 exactly. This differs from
+  function \code{lsei} and \code{qp}, which may produce small values for
+  exactly 0s, thanks to numerical errors.
+
 }
 
 \value{
@@ -100,11 +136,18 @@ pnnls(a, b, k=0, sum=NULL)
 \examples{
 a = matrix(rnorm(40), nrow=10)
 b = a \%*\% c(0,1,-1,1) + rnorm(10)
-nnls(a, b)$x                   # constraint x >= 0,
-pnnls(a, b, k=0)$x             # same as nnls(a, b)
-pnnls(a, b, k=2)$x             # first two coeffs are not NN-constrained
-pnnls(a, b, k=2, sum=1)$x      # NN-constrained coeffs must sum to 1
-pnnls(a, b, k=2, sum=2)$x      # NN-constrained coeffs must sum to 2
+nnls(a, b)$x                     # constraint x >= 0
+pnnls(a, b, k=0)$x               # same as nnls(a, b)
+pnnls(a, b, k=2)$x               # first two coeffs are not NN-constrained
+pnnls(a, b, k=2, sum=1)$x        # NN-constrained coeffs must sum to 1
+pnnls(a, b, k=2, sum=2)$x        # NN-constrained coeffs must sum to 2
+q = crossprod(a)
+p = -drop(crossprod(b, a))
+pnnqp(q, p, k=2, sum=2)$x        # same solution
+
+pnnls(a, b, sum=1)$x             # zeros found exactly
+pnnqp(q, p, sum=1)$x             # zeros found exactly
+lsei(a, b, rep(1,4), 1, lower=0) # zeros not so exact
 }
 \keyword{ array }   % at least one, from doc/KEYWORDS
 \keyword{ algebra }   % at least one, from doc/KEYWORDS

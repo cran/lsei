@@ -1,9 +1,9 @@
-4835d5704d359f1db7b78fd2620d79e0 *Changes
-6b1b547d651a36254d3826bd3c67b88e *DESCRIPTION
-0c094edbde400a145a905dfe0828101a *NAMESPACE
-ae49c9c8c114389162a0ef3b5db1a073 *R/lsei.R
-f4bfb27cfd9eea6f2424a81ea08bec2a *man/hfti.Rd
-457ddda443f8b99e041e992062203ad7 *man/lsei.Rd
-a821d4af979b3bca7f0ad8bdd458d34b *man/nnls.Rd
+6203bebc6801bb7aaac6434bd795a2ac *Changes
+f2b3de5dc80a5c1f40786643cfe6d364 *DESCRIPTION
+4e0ada2f244e3405dd0501bf0e624c64 *NAMESPACE
+44700ef2906a509ec86b87aa49181125 *R/lsei.R
+fb875544547211cb2d5c122b85ef7100 *man/hfti.Rd
+2e315822ae46adb324d43e3c5c8294f5 *man/lsei.Rd
+69c2ea97a3bb3351bd24e1946d44491f *man/nnls.Rd
 00363f6fb0a9a659fe0e5189bb6bb11e *src/lsei.f
 aa2895602a61bfa7e72de5b4d6da1fe5 *src/pnnls.f
