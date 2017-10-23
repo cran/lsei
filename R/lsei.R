@@ -7,20 +7,6 @@
 #         New Zealand                          #
 # ============================================ #
 
-# ----------------------------------------------------------------------
-# This package provides the R interface functions to some Fortran
-# subroutines in the LSEI package and implements some algorithms described
-# in Lawson and Hanson (1974), "Solving Least Squares Problems",
-# Prentice-HalL.  The source code of this package is downloaded from
-# http://www.netlib.org/lawson-hanson/all
-
-# Last modified: Mon Sep 21 11:43:14 NZST 2015
-# ----------------------------------------------------------------------
-
-# .First.lib <- function(lib, pkg) {
-#   library.dynam("lsei", pkg, lib)
-# }
-
 #---------------------------------- #
 # Nonnegative least squares (NNLS): #
 #                                   #
@@ -29,8 +15,11 @@
 # --------------------------------- #
 
 nnls = function(a, b) {
+  if(!is.vector(b)) b = drop(b)
+  if(!is.matrix(a)) stop("a not matrix")
   m = as.integer(dim(a)[1])
   n = as.integer(dim(a)[2])
+  if(length(b) != m) stop("length(b) != ncol(a)")
   storage.mode(a) = "double"
   storage.mode(b) = "double"
   x = double(n)                       # only for output
@@ -39,46 +28,24 @@ nnls = function(a, b) {
   zz = b                              # m-vector of working space
   index = integer(n)                  # n-vector index, only for output
   mode = integer(1)                   # success-failure flag; = 1, success
-  .Fortran("nnls",a,m,m,n,b,x=x,rnorm=rnorm,w,zz,index=index,
-           mode=mode,PACKAGE="lsei")[c("x","rnorm","index","mode")]
+  .Fortran("nnls",r=a,m,m,n,b=b,x=x,rnorm=rnorm,w,zz,index=index,
+           mode=mode,PACKAGE="lsei")[c("x","r","b","index","rnorm","mode")]
 }
-
-# Solving a partial NNLS problem
-
-# Input:
-#
-# a      Matrix
-# b      Vector or a one-column matrix
-# k      The first k variables are not restricted to non-negativity. 
-
-# Output:
-#
-# x      Solution vector (in the original order of variables)
-# r      Upper triangular matrix
-# b      Vector b after Q transformation
-# rnorm  Euclidean norm of the residual vector
-# mode   Termination mode:
-#           = 1, successful;
-#           = 2, bad dimensions of the problem, either m <= 0 or n <= 0;
-#           = 3, iteration count exceeded (more than 3*n iterations).
-# k      Number of free variables after eliminating linear dependence
-# sum    = NULL, if NN-restricted coefficients are not further
-#            restricted to have a fixed sum;
-#        = positive value, if NN-restricted coefficients are further
-#            restricted to have a fixed positive sum;
 
 pnnls = function(a, b, k=0, sum=NULL) {
   if(!is.vector(b)) b = drop(b)
+  if(!is.matrix(a)) stop("a not matrix")
   m = as.integer(dim(a)[1])
   n = as.integer(dim(a)[2])
   if(!is.null(sum)) {
     if(sum <= 0) stop("Argument 'sum' must be positive or NULL")
     if(k<n) a[,(k+1):n] = a[,(k+1):n] * sum - b
-    else stop("k == ncol(a) (simplex contains no variable)")
+    else stop("k == ncol(a) (null simplex)")
     a = rbind(a, c(rep(0,k), rep(1, n-k)))
     b = c(rep(0, m), 1)
     m = as.integer(m+1)
   }
+  if(length(b) != m) stop("length(b) != ncol(a)")
   storage.mode(a) = "double"
   storage.mode(b) = "double"
   x = double(n)                       # only for output
@@ -92,10 +59,12 @@ pnnls = function(a, b, k=0, sum=NULL) {
       mode=mode,k=k,PACKAGE="lsei")
   r$r = r$r[1:min(m,n),]
   if(!is.null(sum)) {
-    r$x = r$x / sum(r$x[(r$k+1):n])
+    t = sum(r$x[(r$k+1):n])
+    r$x = r$x / t
     r$x[(r$k+1):n] = r$x[(r$k+1):n] * sum
+    r$rnorm = sqrt( pmax((r$rnorm/t)^2 - (1 - 1/t)^2, 0) )
   }
-  r[c("x","r","b","rnorm","index","mode","k")]
+  r[c("x","r","b","index","rnorm","mode","k")]
 }
 
 # --------------------------------- #
@@ -254,11 +223,7 @@ svdrs = function(a, b) {
 # r$u %*% diag(r$d) %*% t(r$v) - x
 # svdrs(x, 1:3)
 
-# Quadratic programming
-
-# p^T x + x^T q x / 2
-
-# h is positive semidefinite
+# Quadratic programming: x^T q x / 2 + p^T x
 
 qp = function(q, p, c=NULL, d=NULL, e=NULL, f=NULL,
     lower=-Inf, upper=Inf, tol=1e-15) {
@@ -272,11 +237,24 @@ qp = function(q, p, c=NULL, d=NULL, e=NULL, f=NULL,
 
 # partial nonnegativity quadratic programming
 
-pnnqp = function(q, p, k=0, sum=NULL, tol=1e-15) {
+pnnqp = function(q, p, k=0, sum=NULL, tol=1e-20) {
   eq = eigen(q)
   v2 = sqrt(eq$values[eq$values >= eq$values[1] * tol])
   kr = length(v2)
   a = t(eq$vectors[,1:kr,drop=FALSE]) * v2
-  b = - colSums(eq$vectors[,1:kr,drop=FALSE] * p / rep(v2, each=length(p)))
+  b = - crossprod(p, eq$vectors[,1:kr,drop=FALSE])[1,] / v2
   pnnls(a, b, k, sum)
 }
+
+# partial nonnegativity quadratic programming
+
+pnnqp2 = function(d, p, k=0, sum=NULL, tol=1e-20) {
+  s = svd(d)
+  sd = abs(s$d)
+  v2 = sd[sd >= sd[1] * tol]
+  kr = length(v2)
+  a = t(s$v[,1:kr,drop=FALSE]) * v2
+  b = - crossprod(p, s$v[,1:kr,drop=FALSE])[1,] / v2
+  pnnls(a, b, k, sum)
+}
+

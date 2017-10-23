@@ -56,7 +56,7 @@ qp(q, p, c=NULL, d=NULL, e=NULL, f=NULL, lower=-Inf, upper=Inf, tol=1e-15)
   \item{f}{Vector of numeric values on the right-hand sides of
     inequality constraints.}
   
-  \item{q}{Matrix of numeric coefficients for the quadratic term of a
+  \item{q}{Matrix of numeric values for the quadratic term of a
     quadratic programming problem.}
   
   \item{p}{Vector of numeric values for the linear term of a quadratic
@@ -66,7 +66,7 @@ qp(q, p, c=NULL, d=NULL, e=NULL, f=NULL, lower=-Inf, upper=Inf, tol=1e-15)
     simple inequality constraints.}
   
   \item{tol}{Tolerance, for checking compatibility of inequalities in
-    lsi() and for calculating pseudo-rank in qp().}
+    \code{lsi} and for calculating pseudo-rank in \code{qp}.}
 
 }
 

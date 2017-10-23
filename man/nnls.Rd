@@ -7,21 +7,21 @@
 \title{Least Squares and Quadratic Programming under Nonnegativity Constraints}
 \description{
   
-  The \code{nnls} function solves the least squares problem under
-  nonnegativity (NN) constraints. It is an R interface to the NNLS
-  function that is described in Lawson and Hanson (1974, 1995). Its
-  Fortran implementation is public domain and available at
+   \code{nnls} solves the least squares problem under nonnegativity (NN)
+  constraints. It is an R interface to the NNLS function that is
+  described in Lawson and Hanson (1974, 1995). Its Fortran
+  implementation is public domain and available at
   \url{http://www.netlib.org/lawson-hanson}.
 
-  The \code{pnnls} function solves the least squares problem when
-  coefficients are partly subject to nonnegativity constraints. It also
-  allows the NN-restricted coefficients to be further restricted to have
-  a fixed positive sum.
+  \code{pnnls} solves the least squares problem when only part of the
+  coefficients are subject to nonnegativity constraints. It also allows
+  the NN-restricted coefficients to be further restricted to have a
+  fixed positive sum.
 
-  The \code{pnnqp} function solves the quadratic programming problem
-  when solution values are partly subject to nonnegativity
-  constraints. It also allows the NN-restricted coefficients to be
-  further restricted to have a fixed positive sum.
+  \code{pnnqp} solves the quadratic programming problem when solution
+  values are partly subject to nonnegativity constraints. It also allows
+  the NN-restricted coefficients to be further restricted to have a
+  fixed positive sum.
 
   These functions are particularly useful for finding zeros exactly. 
 
@@ -30,7 +30,7 @@
 \usage{
 nnls(a, b) 
 pnnls(a, b, k=0, sum=NULL) 
-pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
+pnnqp(q, p, k=0, sum=NULL, tol=1e-20)
 }
 
 \arguments{
@@ -54,7 +54,7 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
   \item{p}{Vector of numeric values for the linear term of a quadratic
     programming problem.}
 
-  \item{tol}{Tolerance for calculating pseudo-rank of \code{q}.}
+  \item{tol}{Tolerance used for calculating pseudo-rank of \code{q}.}
 }
 
 \details{
@@ -63,7 +63,7 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
   
   \deqn{\mathrm{minimize \ \ } || a x - b ||,}{minimize  || a x - b ||,} \deqn{\mathrm{\ \ \ subject\ to\ \ } x \ge 0.}{ subject to  x >= 0.}
   
-  Function \code{pnnls} can also solve the above nonnegativity least
+  Function \code{pnnls} also solves the above nonnegativity least
   squares problem when \code{k=0}, but it may also leave the first
   \code{k} coefficients unrestricted. The output value of \code{k} can
   be different from the input, if \code{a} has linearly dependent
@@ -76,18 +76,15 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
   \deqn{\mathrm{minimize\ \ } \frac12 x^T q x + p^T x,}{minimize 0.5 x^T q x + p^T x,}
 
   when only some or all coefficients are restricted by
-  nonnegativity. The output value of \code{k} can be different from the
-  input, if \code{q} has linearly dependent columns. If \code{sum} is a
-  positive value, \code{pnnls} solves the problem by further restricting
-  that the NN-restricted coefficients must sum to the given value. The
-  quadratic programming problem is solved by transforming the problem
-  into a least squares one under the same constraints, which is then
-  solved by function \code{pnnls}.
+  nonnegativity. The quadratic programming problem is solved by
+  transforming the problem into a least squares one under the same
+  constraints, which is then solved by function \code{pnnls}. Arguments
+  \code{k} and \code{sum} have the same meanings as for \code{pnnls}.
 
   Functions \code{nnls}, \code{pnnls} and \code{pnnqp} are able to
   return any zero-valued solution as 0 exactly. This differs from
-  function \code{lsei} and \code{qp}, which may produce small values for
-  exactly 0s, thanks to numerical errors.
+  functions \code{lsei} and \code{qp}, which may produce very small
+  values for exactly 0s, thanks to numerical errors.
 
 }
 
@@ -95,10 +92,19 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
   
   \item{x}{Solution}
   
-  \item{rnorm}{Euclidean norm of the residual vector.}
+  \item{r}{The upper-triangular matrix \code{Q*a}, pivoted by variables
+    in the order of \code{index}, when \code{sum=NULL}. If \code{sum
+    > 0}, \code{r} is for the transformed \code{a}.}
   
-  \item{index}{Indices of the columns; those in the positive set are
-    first given, and then those in the zero set.}
+  \item{b}{The vector \code{Q*b}, pivoted by variables in the order of
+    \code{index}, when \code{sum=NULL}. If \code{sum > 0}, \code{b} is
+    for the transformed \code{b}.}
+  
+  \item{index}{Indices of the columns of \code{r}; those unrestricted
+    and in the positive set are first given, and then those in the zero
+    set.}
+  
+  \item{rnorm}{Euclidean norm of the residual vector.}
   
   \item{mode}{= 1, successful computation;
 
@@ -106,12 +112,9 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
 
     = 3, iteration count exceeded (more than 3 times the number
     of variables iterations).}
-  
-  \item{r}{The upper-triangular matrix \code{Q*a}, pivoted by variables
-    in the order of \code{index}.}
-  
-  \item{b}{The vector \code{Q*b}, pivoted by variables in the order of
-    \code{index}.}
+
+  \item{k}{Number of the first few coefficients that are truly not
+  NN-restricted.} 
   
 }
 
@@ -119,13 +122,13 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
 
 \references{
 
-  Lawson and Hanson (1974, 1995). Solving least squares
-  problems. Englewood Cliffs, N.J., Prentice-Hall.
+  Lawson and Hanson (1974, 1995). Solving Least Squares
+  Problems. Englewood Cliffs, N.J., Prentice-Hall.
 
   Dax (1990). The smallest point of a polytope. Journal of Optimization
   Theory and Applications, 64, pp. 429-432.
   
-  Wang (2010). Fisher scoring: an interpolation family and its Monte
+  Wang (2010). Fisher scoring: An interpolation family and its Monte
   Carlo implementations. Computational Statistics and Data Analysis, 54,
   pp. 1744-1755.
   
@@ -135,7 +138,7 @@ pnnqp(q, p, k=0, sum=NULL, tol=1e-15)
 
 \examples{
 a = matrix(rnorm(40), nrow=10)
-b = a \%*\% c(0,1,-1,1) + rnorm(10)
+b = drop(a \%*\% c(0,1,-1,1)) + rnorm(10)
 nnls(a, b)$x                     # constraint x >= 0
 pnnls(a, b, k=0)$x               # same as nnls(a, b)
 pnnls(a, b, k=2)$x               # first two coeffs are not NN-constrained
