@@ -11,7 +11,7 @@
 void indx(double *x, int *m, double *v, int *n, int *ind)
 {
   int left, right, mid;
-  int i, j;
+  int i;
 
   for(i = 0; i < *m; i++) {
     if(x[i] < v[0]) {
